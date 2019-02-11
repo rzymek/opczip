@@ -15,12 +15,15 @@ import java.util.Random;
 import java.util.function.Function;
 import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @BenchmarkMode(Mode.SingleShotTime)
 @Measurement(iterations = 1)
 @Warmup(iterations = 0)
 @Fork(1)
-public class Benchmarks extends BenchmarkBase {
+public class BenchmarksIT extends BenchmarkBase {
 
     public static final int SIZE = 1_000_000;
 
@@ -81,6 +84,7 @@ public class Benchmarks extends BenchmarkBase {
             }
             zip.closeEntry();
         }
+        assertEquals(SIZE * 1024L, new ZipFile(file).getEntry("big.dat").getSize());
         return file.length();
     }
 }
