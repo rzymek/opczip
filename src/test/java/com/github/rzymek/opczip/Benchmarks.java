@@ -2,6 +2,7 @@ package com.github.rzymek.opczip;
 
 import com.github.rzymek.opczip.base.BenchmarkBase;
 import com.github.rzymek.opczip.base.ZipImpl;
+import com.github.rzymek.opczip.implementations.CommonsCompress;
 import com.github.rzymek.opczip.implementations.JdkZip;
 import com.github.rzymek.opczip.implementations.Noop;
 import com.github.rzymek.opczip.implementations.OpcZip;
@@ -51,6 +52,17 @@ public class Benchmarks extends BenchmarkBase {
     @Benchmark
     public long opczipBestSpeed() throws Exception {
         return createBigZip("opczip", OpcZip::new, Deflater.BEST_SPEED);
+    }
+
+
+    @Benchmark
+    public long commons() throws Exception {
+        return createBigZip("commons", CommonsCompress::new, Deflater.DEFAULT_COMPRESSION);
+    }
+
+    @Benchmark
+    public long commonsBestSpeed() throws Exception {
+        return createBigZip("commons", CommonsCompress::new, Deflater.BEST_SPEED);
     }
 
     public long createBigZip(String name, Function<OutputStream, ZipImpl> createZip, int level) throws Exception {
