@@ -12,8 +12,8 @@ public class OpcOutputStream extends DeflaterOutputStream {
 
     private final Zip64Impl spec;
     private final List<Entry> entries = new ArrayList<>();
+    private final CRC32 crc = new CRC32();
     private Entry current;
-    private CRC32 crc = new CRC32();
     private int written = 0;
     private boolean finished = false;
 
@@ -65,6 +65,7 @@ public class OpcOutputStream extends DeflaterOutputStream {
         crc.reset();
     }
 
+    @Override
     public void finish() throws IOException {
         if(finished){
             return;
@@ -76,10 +77,11 @@ public class OpcOutputStream extends DeflaterOutputStream {
         for (Entry entry : entries) {
             written += spec.writeCEN(entry);
         }
-        spec.writeEND(entries.size(), offset, written - offset);
+        written += spec.writeEND(entries.size(), offset, written - offset);
         finished = true;
     }
 
+    @Override
     public synchronized void write(byte[] b, int off, int len) throws IOException {
         if (off < 0 || len < 0 || off > b.length - len) {
             throw new IndexOutOfBoundsException();

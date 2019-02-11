@@ -19,8 +19,8 @@ class Zip64Impl {
     private int written = 0;
 
     static class Entry {
+        final String filename;
         long crc;
-        String filename;
         long size;
         int compressedSize;
         int offset;

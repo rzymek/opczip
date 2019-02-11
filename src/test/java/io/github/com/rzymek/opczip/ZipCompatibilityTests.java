@@ -12,9 +12,11 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
@@ -23,28 +25,42 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ZipCompatibilityTests {
-    private Map<String, String> contents = createContents();
+    private final Map<String, String> contents = createContents();
 
     @Test
-    void test() throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        create(out, contents);
-        out.close();
+    void direct() throws IOException {
+        validate(generate(this::createDirect));
+    }
 
-        byte[] zipBytes = out.toByteArray();
+    @Test
+    void wrapper() throws IOException {
+        validate(generate(this::createWithWrapper));
+    }
+
+    private void validate(byte[] zipBytes) throws IOException {
         assertThat(zipBytes.length, greaterThan(0));
-        validate(new ByteArrayInputStream(zipBytes));
+        validateCommonsCompress(new ByteArrayInputStream(zipBytes));
+        validateUsingZipFile(zipBytes);
+    }
 
+    private byte[] generate(Consumer<OutputStream> consumer) throws IOException {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            consumer.accept(out);
+            return out.toByteArray();
+        }
+    }
+
+    private void validateUsingZipFile(byte[] zipBytes) throws IOException {
         Path file = Files.createTempFile(Paths.get("target"), "test", ".zip");
         try {
             Files.write(file, zipBytes);
             validateZipFile(file.toFile());
-        }finally {
+        } finally {
             file.toFile().delete();
         }
     }
 
-    private void validate(InputStream in) throws IOException {
+    private void validateCommonsCompress(InputStream in) throws IOException {
         ZipArchiveInputStream zip = new ZipArchiveInputStream(in);
         Set<String> leftToRead = new HashSet<>(contents.keySet());
         for (; ; ) {
@@ -73,7 +89,7 @@ class ZipCompatibilityTests {
         assertThat(leftToRead, empty());
     }
 
-    private void create(OutputStream out, Map<String, String> contents) throws IOException {
+    private void createDirect(OutputStream out) {
         try (OpcOutputStream zip = new OpcOutputStream(out)) {
             for (Map.Entry<String, String> entry : contents.entrySet()) {
                 zip.putNextEntry(new ZipEntry(entry.getKey()));
@@ -82,6 +98,22 @@ class ZipCompatibilityTests {
                 printer.flush();
                 zip.closeEntry();
             }
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private void createWithWrapper(OutputStream out) {
+        try (ZipOutputStream zip = new OpcZipOutputStream(out)) {
+            for (Map.Entry<String, String> entry : contents.entrySet()) {
+                zip.putNextEntry(new ZipEntry(entry.getKey()));
+                PrintStream printer = new PrintStream(zip);
+                printer.print(entry.getValue());
+                printer.flush();
+                zip.closeEntry();
+            }
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
     }
 
