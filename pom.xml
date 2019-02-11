@@ -14,8 +14,9 @@
 
     <scm>
         <connection>scm:git:git://github.com/rzymek/opczip.git</connection>
-        <developerConnection>scm:git:ssh://github.com:rzymek/opczip.git</developerConnection>
+        <developerConnection>scm:git:git@github.com:rzymek/opczip.git</developerConnection>
         <url>http://github.com/rzymek/opczip/tree/master</url>
+        <tag>opczip-1.0.0</tag>
     </scm>
 
     <licenses>
