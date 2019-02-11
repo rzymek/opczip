@@ -1,6 +1,6 @@
-package io.github.com.rzymek.opczip;
+package com.github.rzymek.opczip;
 
-import io.github.com.rzymek.opczip.Zip64Impl.Entry;
+import com.github.rzymek.opczip.Zip64Impl.Entry;
 
 import java.io.IOException;
 import java.io.OutputStream;

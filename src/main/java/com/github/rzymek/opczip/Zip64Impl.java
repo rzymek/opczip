@@ -1,4 +1,4 @@
-package io.github.com.rzymek.opczip;
+package com.github.rzymek.opczip;
 
 import java.io.IOException;
 import java.io.OutputStream;

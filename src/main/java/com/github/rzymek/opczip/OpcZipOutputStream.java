@@ -1,8 +1,7 @@
-package io.github.com.rzymek.opczip;
+package com.github.rzymek.opczip;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 

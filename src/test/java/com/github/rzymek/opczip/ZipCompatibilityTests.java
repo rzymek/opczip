@@ -1,4 +1,4 @@
-package io.github.com.rzymek.opczip;
+package com.github.rzymek.opczip;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
