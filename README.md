@@ -11,7 +11,7 @@ but replaces it's implementation with `OpcOutputStream`.
  
 ## Problem with huge XLSX files
 
-**TL;DR;** Excel has requires specific ZIP flag values in `.xlsx` that Java's ZIP implementation
+**TL;DR;** Excel requires specific ZIP flag values in `.xlsx` that Java's ZIP implementation
 does not provide when streaming.
 
 The standard in Excel file creation in Java is [Apache POI](http://poi.apache.org/). 
