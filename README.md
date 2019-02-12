@@ -1,5 +1,6 @@
 # Open Package Container ZIP64 streaming implementation
 ![build status](https://travis-ci.org/rzymek/opczip.svg?branch=master)
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.rzymek/opczip.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22com.github.rzymek%22%20AND%20a:%22opczip%22)
 
 Drop in replacement for `java.util.ZipOutputStream`. Only Java ZIP64 implementation compatible with MS Excel.
 
