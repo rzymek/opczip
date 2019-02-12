@@ -8,6 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.*;
 
+/**
+ * ZIP64 OutputStream implementation compatible with MS Excel.
+ * Drop in replacement for `java.util.ZipOutputStream`.
+ */
 public class OpcOutputStream extends DeflaterOutputStream {
 
     private final Zip64Impl spec;
@@ -17,6 +21,11 @@ public class OpcOutputStream extends DeflaterOutputStream {
     private int written = 0;
     private boolean finished = false;
 
+    /**
+     * Creates ZIP64 output stream
+     *
+     * @param out target stream to write compressed data to
+     */
     public OpcOutputStream(OutputStream out) {
         super(out, new Deflater(Deflater.DEFAULT_COMPRESSION, true));
         this.spec = new Zip64Impl(out);
@@ -65,6 +74,10 @@ public class OpcOutputStream extends DeflaterOutputStream {
         crc.reset();
     }
 
+
+    /**
+     * @see ZipOutputStream#finish()
+     */
     @Override
     public void finish() throws IOException {
         if(finished){
@@ -81,6 +94,9 @@ public class OpcOutputStream extends DeflaterOutputStream {
         finished = true;
     }
 
+    /**
+     * @see ZipOutputStream#write(byte[], int, int)
+     */
     @Override
     public synchronized void write(byte[] b, int off, int len) throws IOException {
         if (off < 0 || len < 0 || off > b.length - len) {
@@ -92,6 +108,9 @@ public class OpcOutputStream extends DeflaterOutputStream {
         crc.update(b, off, len);
     }
 
+    /**
+     * @see ZipOutputStream#close()
+     */
     @Override
     public void close() throws IOException {
         finish();
