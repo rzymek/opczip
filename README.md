@@ -5,6 +5,14 @@
 Drop in replacement for `java.util.ZipOutputStream`. Only Java ZIP64 implementation compatible with MS Excel.
 
 ### Usage
+```xml
+<dependency>
+    <groupId>com.github.rzymek</groupId>
+    <artifactId>opczip</artifactId>
+    <version>1.0.2</version>
+</dependency>
+```
+
 Replace usages of `java.util.ZipOutputStream` with `OpcOutputStream`.
 
 Another option is to use `OpcZipOutputStream`. It extends `ZipOutputSteam` for compatibility, 
