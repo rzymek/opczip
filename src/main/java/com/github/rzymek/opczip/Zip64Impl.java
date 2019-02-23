@@ -12,9 +12,12 @@ class Zip64Impl {
     private static final long PK0506 = 0x06054b50L;
     private static final long PK0708 = 0x08074b50L;
 
+    private static final int VERSION_20 = 20;
     private static final int VERSION_45 = 45;
     private static final int DATA_DESCRIPTOR_USED = 0x08;
     private static final int ZIP64_FIELD = 0x0001;
+    private static final long MAX32 = 0xffffffffL;
+
     private final OutputStream out;
     private int written = 0;
 
@@ -71,16 +74,16 @@ class Zip64Impl {
      */
     int writeCEN(Entry entry) throws IOException {
         written = 0;
-        boolean useZip64 = entry.size > 0xffffffffL;
+        boolean useZip64 = entry.size > MAX32;
         writeInt(PK0102);                              // "PK\001\002"
         writeShort(VERSION_45);                        // version made by: 4.5
-        writeShort(VERSION_45);                        // version required: 4.5
+        writeShort(useZip64 ? VERSION_45 : VERSION_20);// version required: 4.5
         writeShort(DATA_DESCRIPTOR_USED);              // flags: 8 = data descriptor used
         writeShort(ZipEntry.DEFLATED);                 // compression method: 8 = deflate
         writeInt(0);                                // file modification time & date
         writeInt(entry.crc);                           // CRC-32
         writeInt(entry.compressedSize);                // compressed size
-        writeInt(useZip64 ? 0xffffffffL : entry.size); // uncompressed size
+        writeInt(useZip64 ? MAX32 : entry.size); // uncompressed size
         writeShort(entry.filename.length());           // filename length
         writeShort(useZip64
                 ? (2 + 2 + 8)  /* short + short + long*/

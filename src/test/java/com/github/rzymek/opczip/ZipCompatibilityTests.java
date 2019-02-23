@@ -16,6 +16,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -41,6 +42,7 @@ class ZipCompatibilityTests {
         assertThat(zipBytes.length, greaterThan(0));
         validateCommonsCompress(new ByteArrayInputStream(zipBytes));
         validateUsingZipFile(zipBytes);
+//        validateJdk(new ByteArrayInputStream(zipBytes));
     }
 
     private byte[] generate(Consumer<OutputStream> consumer) throws IOException {
@@ -65,6 +67,20 @@ class ZipCompatibilityTests {
         Set<String> leftToRead = new HashSet<>(contents.keySet());
         for (; ; ) {
             ArchiveEntry entry = zip.getNextEntry();
+            if (entry == null) {
+                break;
+            }
+            assertEquals(contents.get(entry.getName()), readFully(zip));
+            assertTrue(leftToRead.remove(entry.getName()));
+        }
+        assertThat(leftToRead, empty());
+    }
+
+    private void validateJdk(InputStream in) throws IOException {
+        ZipInputStream zip = new ZipInputStream(in);
+        Set<String> leftToRead = new HashSet<>(contents.keySet());
+        for (; ; ) {
+            ZipEntry entry = zip.getNextEntry();
             if (entry == null) {
                 break;
             }
