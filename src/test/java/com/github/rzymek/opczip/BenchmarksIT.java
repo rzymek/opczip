@@ -68,7 +68,7 @@ public class BenchmarksIT extends BenchmarkBase {
         return createBigZip("commons", CommonsCompress::new, Deflater.BEST_SPEED);
     }
 
-    public long createBigZip(String name, Function<OutputStream, ZipImpl> createZip, int level) throws Exception {
+    public static long createBigZip(String name, Function<OutputStream, ZipImpl> createZip, int level) throws Exception {
         Random random = new Random(0);
         File file = new File("target", name + "_" + level + ".zip");
         try (

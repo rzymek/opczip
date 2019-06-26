@@ -1,64 +1,113 @@
 package com.github.rzymek.opczip.reader;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.io.*;
+import java.util.*;
+import java.util.logging.Logger;
 
-class OrderedZipStreamReader {
-    public static class OrderedZipStreamReaderBuilder {
-        private Map<String, ConsumerEntry> consumers = new HashMap<>();
+import static java.util.stream.Collectors.toSet;
 
-        private static class ConsumerEntry {
-            Consumer consumer;
-            List<String> dependencies;
-            boolean consumed = false;
+abstract class OrderedZipStreamReader {
+    static final Logger log = Logger.getLogger(OrderedZipStreamReader.class.getName());
 
-            ConsumerEntry(Consumer consumer, String... dependencies) {
-                this.consumer = consumer;
-                this.dependencies = Arrays.asList(dependencies);
-            }
+    private Map<String, ConsumerEntry> consumers = new HashMap<>();
+
+    private static class ConsumerEntry {
+        Consumer processor;
+        Set<String> dependencies;
+        boolean consumed = false;
+
+        ConsumerEntry(Consumer consumer, String... dependencies) {
+            this.processor = consumer;
+            this.dependencies = Set.of(dependencies);
         }
+    }
 
-        public OrderedZipStreamReaderBuilder with(Consumer consumer, String entry, String... dependencies) {
-            ConsumerEntry prev = consumers.put(entry, new ConsumerEntry(consumer, dependencies));
-            if (prev != null) {
-                throw new IllegalStateException(entry + " already registered");
-            }
-            return this;
+    public OrderedZipStreamReader with(Consumer consumer, String entry, String... dependencies) {
+        ConsumerEntry prev = consumers.put(entry, new ConsumerEntry(consumer, dependencies));
+        if (prev != null) {
+            throw new IllegalStateException(entry + " already registered");
         }
+        return this;
+    }
 
-        public void read(InputStream in) throws IOException {
-            try (ZipInputStream zip = new ZipInputStream(in)) {
-                while (hasPendingConsumers()) {
-                    ZipEntry nextEntry = zip.getNextEntry();
-                    if (nextEntry == null) {
-                        break;
-                    }
-                    String name = nextEntry.getName();
-                    ConsumerEntry entry = consumers.get(name);
-                    if (entry != null) {
-                        entry.consumer.accept(zip);
-                        entry.consumed = true;
-                    }
-                    zip.closeEntry();
+    public void read(InputStream in) throws IOException {
+        validateDependencies();
+        try (SkippableZipInputStream zip = open(in)) {
+            while (hasPendingConsumers()) {
+                String name = zip.getNextEntry();
+                log.info(name);
+                if (name == null) {
+                    break;
                 }
+                ConsumerEntry consumer = consumers.get(name);
+                if (consumer == null) {
+                    zip.skipEntry();
+                } else {
+                    if (isEveryConsumed(consumer.dependencies)) {
+                        process(zip.getInputStream(), consumer);
+                        consumers.entrySet().stream()
+                                .filter(e -> !e.getValue().consumed)
+                                .filter(e -> e.getValue().dependencies.contains(name))
+                                .filter(e -> isEveryConsumedBut(e.getValue().dependencies, name))
+                                .forEach(e -> process(getTempInputStream(e.getKey()), e.getValue()));
+                    } else {
+                        zip.transferCompressedTo(getTempOutputStream(name));
+                    }
+                }
+                zip.closeEntry();
             }
         }
+    }
 
-        private boolean hasPendingConsumers() {
-            return consumers.values().stream().anyMatch(e -> !e.consumed);
+    private void validateDependencies() {
+        consumers.forEach((name, consumer) -> {
+            Set<String> notProcessedDeps = consumer.dependencies.stream()
+                    .filter(dep -> !consumers.containsKey(dep))
+                    .collect(toSet());
+            if (notProcessedDeps.isEmpty()) {
+                return;
+            }
+            throw new IllegalStateException(name + " has a dependencies that are not registered for processing: " + notProcessedDeps);
+        });
+    }
+
+    private boolean isEveryConsumedBut(Set<String> dependencies, String name) {
+        return !dependencies.stream()
+                .filter(dep -> !dep.equals(name))
+                .anyMatch(this::isUnconsumedDependency);
+    }
+
+
+    protected void process(InputStream in, ConsumerEntry entry) throws UncheckedIOException {
+        try {
+            entry.processor.accept(in);
+            entry.consumed = true;
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
 
     }
 
-    public static OrderedZipStreamReaderBuilder with(Consumer consumer, String entry, String... dependencies) {
-        return new OrderedZipStreamReaderBuilder().with(consumer, entry, dependencies);
+    private boolean isEveryConsumed(Set<String> dependencies) {
+        return !dependencies.stream().anyMatch(this::isUnconsumedDependency);
     }
+
+    protected abstract OutputStream getTempOutputStream(String name) throws IOException;
+
+    protected abstract InputStream getTempInputStream(String name) throws UncheckedIOException;
+
+    protected abstract SkippableZipInputStream open(InputStream in);
+
+    private boolean isUnconsumedDependency(String name) {
+        return consumers.values().stream()
+                .filter(e -> !e.consumed)
+                .anyMatch(e -> e.dependencies.contains(name));
+    }
+
+    private boolean hasPendingConsumers() {
+        return consumers.values().stream().anyMatch(e -> !e.consumed);
+    }
+
 
     @FunctionalInterface
     public interface Consumer {
