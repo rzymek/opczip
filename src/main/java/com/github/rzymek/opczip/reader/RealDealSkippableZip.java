@@ -3,14 +3,12 @@ package com.github.rzymek.opczip.reader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
-public class JdkZipInputStream implements SkippableZipInputStream {
-    private final ZipInputStream in;
+public class RealDealSkippableZip implements SkippableZipInputStream {
+    final ZipEntryReader in;
 
-    public JdkZipInputStream(InputStream in) {
-        this.in = new ZipInputStream(in);
+    public RealDealSkippableZip(InputStream in) {
+        this.in = new ZipEntryReader(in);
     }
 
     @Override
@@ -20,33 +18,32 @@ public class JdkZipInputStream implements SkippableZipInputStream {
 
     @Override
     public void skipEntry() throws IOException {
-        in.readAllBytes();
+        in.skipStream();
     }
 
     @Override
     public String getNextEntry() throws IOException {
-        ZipEntry nextEntry = in.getNextEntry();
-        return nextEntry == null ? null : nextEntry.getName();
+        return in.nextEntry().getName();
     }
 
     @Override
     public void closeEntry() throws IOException {
-        in.closeEntry();
+
     }
 
     @Override
     public InputStream getUncompressedInputStream() {
-        return in;
+        return in.getUncompressedStream();
     }
 
     @Override
     public void transferCompressedTo(OutputStream outputStream) throws IOException {
-        getUncompressedInputStream().transferTo(outputStream);
+        in.getCompressedStream().transferTo(outputStream);
         outputStream.close();
     }
 
     @Override
     public InputStream uncompressedTransferred(InputStream tempInputStream) {
-        return tempInputStream;
+        return ZipEntryReader.uncompressed(tempInputStream);
     }
 }

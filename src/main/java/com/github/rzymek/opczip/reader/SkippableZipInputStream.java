@@ -14,7 +14,9 @@ public interface SkippableZipInputStream extends AutoCloseable {
 
     void closeEntry() throws IOException;
 
-    InputStream getInputStream();
+    InputStream getUncompressedInputStream();
 
     void transferCompressedTo(OutputStream outputStream) throws IOException;
+
+    InputStream uncompressedTransferred(InputStream tempInputStream);
 }

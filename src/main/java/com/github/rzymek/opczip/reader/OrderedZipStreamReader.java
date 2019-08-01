@@ -44,12 +44,12 @@ abstract class OrderedZipStreamReader {
                     zip.skipEntry();
                 } else {
                     if (isEveryConsumed(consumer.dependencies)) {
-                        process(zip.getInputStream(), consumer);
+                        process(zip.getUncompressedInputStream(), consumer);
                         consumers.entrySet().stream()
                                 .filter(e -> !e.getValue().consumed)
                                 .filter(e -> e.getValue().dependencies.contains(name))
                                 .filter(e -> isEveryConsumedBut(e.getValue().dependencies, name))
-                                .forEach(e -> process(getTempInputStream(e.getKey()), e.getValue()));
+                                .forEach(e -> process(zip.uncompressedTransferred(getTempInputStream(e.getKey())), e.getValue()));
                     } else {
                         zip.transferCompressedTo(getTempOutputStream(name));
                     }

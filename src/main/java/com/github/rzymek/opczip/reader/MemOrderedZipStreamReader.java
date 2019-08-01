@@ -4,13 +4,8 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MemOrderedZipStreamReader extends OrderedZipStreamReader {
+public abstract class MemOrderedZipStreamReader extends OrderedZipStreamReader {
     Map<String, byte[]> cache = new HashMap<>();
-
-    @Override
-    protected SkippableZipInputStream open(InputStream in) {
-        return new JdkZipInputStream(in);
-    }
 
     @Override
     protected OutputStream getTempOutputStream(String name) {
@@ -32,3 +27,20 @@ public class MemOrderedZipStreamReader extends OrderedZipStreamReader {
         return new ByteArrayInputStream(buf);
     }
 }
+
+
+class JdkMemOrderedZipStreamReader extends MemOrderedZipStreamReader{
+    @Override
+    protected SkippableZipInputStream open(InputStream in) {
+        return new JdkZipInputStream(in);
+    }
+}
+
+
+class RealMemOrderedZipStreamReader extends MemOrderedZipStreamReader{
+    @Override
+    protected SkippableZipInputStream open(InputStream in) {
+        return new RealDealSkippableZip(in);
+    }
+}
+

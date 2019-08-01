@@ -35,7 +35,7 @@ public class OrderedZipStreamReaderBenchmarkIT {
         }
     }
 
-    @AfterAll
+//    @AfterAll
     static void cleanup() {
         testFile.delete();
     }
@@ -61,7 +61,19 @@ public class OrderedZipStreamReaderBenchmarkIT {
     void shouldReadInOrder() throws Exception {
         file2 = false;
         file4 = false;
-        new MemOrderedZipStreamReader()
+        new RealMemOrderedZipStreamReader()
+                .with(this::file2, "file_2.txt", "file_4.txt")
+                .with(this::file4, "file_4.txt")
+                .read(new FileInputStream(testFile));
+        assertTrue(file4);
+        assertTrue(file2);
+    }
+
+    @RepeatedTest(2)
+    void shouldReadInOrderJdk() throws Exception {
+        file2 = false;
+        file4 = false;
+        new JdkMemOrderedZipStreamReader()
                 .with(this::file2, "file_2.txt", "file_4.txt")
                 .with(this::file4, "file_4.txt")
                 .read(new FileInputStream(testFile));
