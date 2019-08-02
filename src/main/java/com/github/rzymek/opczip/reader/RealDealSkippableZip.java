@@ -1,14 +1,16 @@
 package com.github.rzymek.opczip.reader;
 
+import com.github.rzymek.opczip.reader.skip.zip.ZipReader;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
 public class RealDealSkippableZip implements SkippableZipInputStream {
-    final ZipEntryReader in;
+    final ZipReader in;
 
     public RealDealSkippableZip(InputStream in) {
-        this.in = new ZipEntryReader(in);
+        this.in = new ZipReader(in);
     }
 
     @Override
@@ -44,6 +46,6 @@ public class RealDealSkippableZip implements SkippableZipInputStream {
 
     @Override
     public InputStream uncompressedTransferred(InputStream tempInputStream) {
-        return ZipEntryReader.uncompressed(tempInputStream);
+        return ZipReader.uncompressed(tempInputStream);
     }
 }
