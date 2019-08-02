@@ -1,4 +1,4 @@
-package com.github.rzymek.opczip.reader.skip.zip;
+package com.github.rzymek.opczip.reader.skipping;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,15 +8,15 @@ import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipEntry;
 
-import static com.github.rzymek.opczip.reader.skip.zip.ZipReadSpec.*;
+import static com.github.rzymek.opczip.reader.skipping.ZipReadSpec.*;
 
-public class ZipReader implements AutoCloseable {
+public class ZipStreamReader implements AutoCloseable {
     private final PushbackInputStream in;
     private int flag;
     private boolean reachedCEN = false;
     private ZipEntry currentEntry;
 
-    public ZipReader(InputStream in) {
+    public ZipStreamReader(InputStream in) {
         this.in = new PushbackInputStream(in, 8192);
     }
 
@@ -34,17 +34,18 @@ public class ZipReader implements AutoCloseable {
                     "Got " + Signature.toString(lfh, LFH.length());
             throw new IOException(msg);
         }
-        flag = get16(lfh, LOCFLG);
-        final int nameLen = get16(lfh, LOCNAM);
+        flag = get16(lfh, LFH_FLG);
+        final int nameLen = get16(lfh, LFH_NAM);
         byte[] filename = readNBytes(in, nameLen);
+
         currentEntry = new ZipEntry(new String(filename, StandardCharsets.US_ASCII));
+        currentEntry.setCompressedSize(get32(lfh, LFH_SIZ));
+        currentEntry.setSize(get32(lfh, LFH_LEN));
+        currentEntry.setCrc(get32(lfh, LFH_CRC));
 
-        currentEntry.setCompressedSize(get32(lfh, LOCSIZ));
-        currentEntry.setSize(get32(lfh, LOCLEN));
-        currentEntry.setCrc(get32(lfh, LOCCRC));
-
-        int extLen = get16(lfh, LOCEXT);
+        int extLen = get16(lfh, LFH_EXT);
         in.skip(extLen);
+
         return currentEntry;
     }
 
@@ -70,7 +71,7 @@ public class ZipReader implements AutoCloseable {
         if (reachedCEN) {
             return null;
         }
-        return new CompressedEntryInputStream(in, expectingDatSig());
+        return new CompressedEntryInputStream(in, currentEntry, expectingDatSig());
     }
 
     private boolean expectingDatSig() {

@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public interface SkippableZipInputStream extends AutoCloseable {
+interface SkippableZip extends AutoCloseable {
     @Override
     void close() throws IOException;
 
@@ -12,11 +12,9 @@ public interface SkippableZipInputStream extends AutoCloseable {
 
     String getNextEntry() throws IOException;
 
-    void closeEntry() throws IOException;
-
     InputStream getUncompressedInputStream();
 
     void transferCompressedTo(OutputStream outputStream) throws IOException;
 
-    InputStream uncompressedTransferred(InputStream tempInputStream);
+    InputStream uncompress(InputStream tempInputStream);
 }

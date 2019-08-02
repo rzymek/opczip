@@ -1,9 +1,6 @@
 package com.github.rzymek.opczip.reader;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.*;
 import java.util.zip.ZipEntry;
@@ -17,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class OrderedZipStreamReaderBenchmarkIT {
     final static File testFile = new File("target", "bin-read.zip");
     private static final int SIZE = 1024 * 1024 * 10;
+    public static final int REPEATS = 15;
     private boolean file4;
     private boolean file2;
 
@@ -35,12 +33,12 @@ public class OrderedZipStreamReaderBenchmarkIT {
         }
     }
 
-//    @AfterAll
+    @AfterAll
     static void cleanup() {
-        testFile.delete();
+//        testFile.delete();
     }
 
-    @RepeatedTest(2)
+    @RepeatedTest(REPEATS) @Disabled
     void baseline() throws IOException {
         try (ZipInputStream in = new ZipInputStream(new FileInputStream(testFile))) {
             for (; ; ) {
@@ -57,11 +55,11 @@ public class OrderedZipStreamReaderBenchmarkIT {
         }
     }
 
-    @RepeatedTest(2)
-    void shouldReadInOrder() throws Exception {
+    @RepeatedTest(REPEATS)
+    void shouldReadInOrderMem() throws Exception {
         file2 = false;
         file4 = false;
-        new RealMemOrderedZipStreamReader()
+        new MemCacheOrderedZipStreamReader()
                 .with(this::file2, "file_2.txt", "file_4.txt")
                 .with(this::file4, "file_4.txt")
                 .read(new FileInputStream(testFile));
@@ -69,7 +67,19 @@ public class OrderedZipStreamReaderBenchmarkIT {
         assertTrue(file2);
     }
 
-    @RepeatedTest(2)
+    @RepeatedTest(REPEATS)
+    void shouldReadInOrderDisk() throws Exception {
+        file2 = false;
+        file4 = false;
+        new DiskCacheOrderedZipStreamReader()
+                .with(this::file2, "file_2.txt", "file_4.txt")
+                .with(this::file4, "file_4.txt")
+                .read(new FileInputStream(testFile));
+        assertTrue(file4);
+        assertTrue(file2);
+    }
+
+    @RepeatedTest(REPEATS) @Disabled
     void shouldReadInOrderJdk() throws Exception {
         file2 = false;
         file4 = false;

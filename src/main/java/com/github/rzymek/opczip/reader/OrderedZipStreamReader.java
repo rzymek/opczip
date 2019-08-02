@@ -32,7 +32,7 @@ abstract class OrderedZipStreamReader {
 
     public void read(InputStream in) throws IOException {
         validateDependencies();
-        try (SkippableZipInputStream zip = open(in)) {
+        try (SkippableZip zip = open(in)) {
             while (hasPendingConsumers()) {
                 String name = zip.getNextEntry();
                 log.info(name);
@@ -49,12 +49,11 @@ abstract class OrderedZipStreamReader {
                                 .filter(e -> !e.getValue().consumed)
                                 .filter(e -> e.getValue().dependencies.contains(name))
                                 .filter(e -> isEveryConsumedBut(e.getValue().dependencies, name))
-                                .forEach(e -> process(zip.uncompressedTransferred(getTempInputStream(e.getKey())), e.getValue()));
+                                .forEach(e -> process(zip.uncompress(getTempInputStream(e.getKey())), e.getValue()));
                     } else {
                         zip.transferCompressedTo(getTempOutputStream(name));
                     }
                 }
-                zip.closeEntry();
             }
         }
     }
@@ -96,7 +95,9 @@ abstract class OrderedZipStreamReader {
 
     protected abstract InputStream getTempInputStream(String name) throws UncheckedIOException;
 
-    protected abstract SkippableZipInputStream open(InputStream in);
+    protected SkippableZip open(InputStream in) {
+        return new SkippableZipReader(in);
+    }
 
     private boolean isUnconsumedDependency(String name) {
         return consumers.values().stream()
@@ -113,4 +114,6 @@ abstract class OrderedZipStreamReader {
     public interface Consumer {
         void accept(InputStream in) throws IOException;
     }
+
+
 }

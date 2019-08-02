@@ -46,7 +46,7 @@ public class OrderedZipStreamReaderTest {
     @Test
     void shouldRead() throws Exception {
         file4 = null;
-        new RealMemOrderedZipStreamReader()
+        new MemCacheOrderedZipStreamReader()
                 .with(this::file4, "file_4.txt")
                 .read(new FileInputStream(testFile));
         assertEquals(FILE4, file4);
@@ -57,7 +57,7 @@ public class OrderedZipStreamReaderTest {
     void shouldReadInOrder() throws Exception {
         file2 = null;
         file4 = null;
-        new RealMemOrderedZipStreamReader()
+        new MemCacheOrderedZipStreamReader()
                 .with(this::file2, "file_2.txt", "file_4.txt")
                 .with(this::file4, "file_4.txt")
                 .read(new FileInputStream(testFile));
@@ -80,7 +80,7 @@ public class OrderedZipStreamReaderTest {
     @Test
     void shouldRequireConsumersForAllDependencies() throws IOException {
         try {
-            new RealMemOrderedZipStreamReader()
+            new MemCacheOrderedZipStreamReader()
                     .with(this::file2, "file_2.txt", "file_5.txt")
                     .with(this::file4, "file_4.txt")
                     .read(new ByteArrayInputStream(new byte[100]));

@@ -1,4 +1,4 @@
-package com.github.rzymek.opczip.reader.skip.zip;
+package com.github.rzymek.opczip.reader.skipping;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,15 +12,15 @@ class ZipReadSpec {
     final static int DATA_DESCRIPTOR_USED = 0x08;
     final static int LFH_SIZE = 30;       // LOC header size
     final static int DAT_SIZE = 16;       // LOC header size
-    final static int LOCVER = 4;        // version needed to extract
-    final static int LOCFLG = 6;        // general purpose bit flag
-    final static int LOCHOW = 8;        // compression method
-    final static int LOCTIM = 10;       // modification time
-    final static int LOCCRC = 14;       // uncompressed file crc-32 value
-    final static int LOCSIZ = 18;       // compressed size
-    final static int LOCLEN = 22;       // uncompressed size
-    final static int LOCNAM = 26;       // filename length
-    final static int LOCEXT = 28;       // extra field length
+    final static int LFH_VER = 4;        // version needed to extract
+    final static int LFH_FLG = 6;        // general purpose bit flag
+    final static int LFH_HOW = 8;        // compression method
+    final static int LFH_TIM = 10;       // modification time
+    final static int LFH_CRC = 14;       // uncompressed file crc-32 value
+    final static int LFH_SIZ = 18;       // compressed size
+    final static int LFH_LEN = 22;       // uncompressed size
+    final static int LFH_NAM = 26;       // filename length
+    final static int LFH_EXT = 28;       // extra field length
 
     /**
      * Fetches unsigned 16-bit value from byte array at specified offset.

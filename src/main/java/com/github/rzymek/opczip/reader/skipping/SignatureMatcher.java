@@ -1,4 +1,4 @@
-package com.github.rzymek.opczip.reader.skip.zip;
+package com.github.rzymek.opczip.reader.skipping;
 
 class SignatureMatcher {
     final Signature signature;

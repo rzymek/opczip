@@ -6,7 +6,7 @@ import java.io.OutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-public class JdkZipInputStream implements SkippableZipInputStream {
+public class JdkZipInputStream implements SkippableZip {
     private final ZipInputStream in;
 
     public JdkZipInputStream(InputStream in) {
@@ -29,10 +29,6 @@ public class JdkZipInputStream implements SkippableZipInputStream {
         return nextEntry == null ? null : nextEntry.getName();
     }
 
-    @Override
-    public void closeEntry() throws IOException {
-        in.closeEntry();
-    }
 
     @Override
     public InputStream getUncompressedInputStream() {
@@ -46,7 +42,7 @@ public class JdkZipInputStream implements SkippableZipInputStream {
     }
 
     @Override
-    public InputStream uncompressedTransferred(InputStream tempInputStream) {
+    public InputStream uncompress(InputStream tempInputStream) {
         return tempInputStream;
     }
 }

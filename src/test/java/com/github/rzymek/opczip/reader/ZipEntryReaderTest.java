@@ -1,6 +1,6 @@
 package com.github.rzymek.opczip.reader;
 
-import com.github.rzymek.opczip.reader.skip.zip.ZipReader;
+import com.github.rzymek.opczip.reader.skipping.ZipStreamReader;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +33,7 @@ public class ZipEntryReaderTest {
 
     @Test
     void testXlsx() throws IOException {
-        try (ZipReader reader = new ZipReader(getClass().getResourceAsStream("/libre.xlsx"))) {
+        try (ZipStreamReader reader = new ZipStreamReader(getClass().getResourceAsStream("/libre.xlsx"))) {
             ZipEntry entry = reader.nextEntry();
             assertEquals("xl/_rels/workbook.xml.rels", entry.getName());
             InputStream raw = reader.getCompressedStream();
@@ -49,19 +49,22 @@ public class ZipEntryReaderTest {
 
     @Test
     void testXlsxReZipped() throws IOException {
-        try (ZipReader reader = new ZipReader(getClass().getResourceAsStream("/libre-rezipped.xlsx"))) {
-            ZipEntry entry = reader.nextEntry();
-            assertEquals("docProps/", entry.getName());
-            InputStream raw = reader.getCompressedStream();
-            assertEquals(0, raw.readAllBytes().length);
-            entry = reader.nextEntry();
-            assertEquals("docProps/core.xml", entry.getName());
+        try (ZipStreamReader reader = new ZipStreamReader(getClass().getResourceAsStream("/libre-rezipped.xlsx"))) {
+            assertEquals("docProps/", reader.nextEntry().getName());
+            assertEquals(0, reader.getCompressedStream().readAllBytes().length);
+            assertEquals("docProps/core.xml", reader.nextEntry().getName());
             reader.skipStream();
-            entry = reader.nextEntry();
-            assertEquals("docProps/app.xml", entry.getName());
+            assertEquals("docProps/app.xml", reader.nextEntry().getName());
             final String APP_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
                     "<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\" xmlns:vt=\"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes\"><Template></Template><TotalTime>0</TotalTime><Application>LibreOffice/6.0.7.3$Linux_X86_64 LibreOffice_project/00m0$Build-3</Application></Properties>";
             assertEquals(APP_XML, new String(reader.getUncompressedStream().readAllBytes(), StandardCharsets.UTF_8));
+
+            assertEquals("[Content_Types].xml", reader.nextEntry().getName());
+            assertEquals(309, reader.getCompressedStream().readAllBytes().length);
+            assertEquals("_rels/", reader.nextEntry().getName());
+            assertEquals(0, reader.getCompressedStream().readAllBytes().length);
+            assertEquals("_rels/.rels", reader.nextEntry().getName());
+            assertEquals(224, reader.getCompressedStream().readAllBytes().length);
         }
     }
 
@@ -71,7 +74,7 @@ public class ZipEntryReaderTest {
     }
 
     private void test(File file) throws IOException {
-        try (ZipReader reader = new ZipReader(new FileInputStream(file))) {
+        try (ZipStreamReader reader = new ZipStreamReader(new FileInputStream(file))) {
             ZipEntry entry = reader.nextEntry();
             assertEquals("file_1.txt", entry.getName());
             assertEquals("1111111111111111111111111111111111111111", entryToString(reader));
@@ -91,7 +94,7 @@ public class ZipEntryReaderTest {
         }
     }
 
-    private String entryToString(ZipReader reader) throws IOException {
+    private String entryToString(ZipStreamReader reader) throws IOException {
         return new String(reader.getUncompressedStream().readAllBytes(), StandardCharsets.UTF_8);
     }
 
