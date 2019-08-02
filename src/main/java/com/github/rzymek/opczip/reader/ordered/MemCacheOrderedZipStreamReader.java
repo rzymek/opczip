@@ -1,4 +1,4 @@
-package com.github.rzymek.opczip.reader;
+package com.github.rzymek.opczip.reader.ordered;
 
 import java.io.*;
 import java.util.HashMap;
@@ -6,10 +6,6 @@ import java.util.Map;
 
 public class MemCacheOrderedZipStreamReader extends OrderedZipStreamReader {
     private Map<String, byte[]> cache = new HashMap<>();
-
-    protected SkippableZip open(InputStream in) {
-        return new SkippableZipReader(in);
-    }
 
     @Override
     protected OutputStream getTempOutputStream(String name) {

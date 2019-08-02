@@ -1,5 +1,6 @@
 package com.github.rzymek.opczip.reader;
 
+import com.github.rzymek.opczip.reader.ordered.MemCacheOrderedZipStreamReader;
 import org.apache.commons.compress.utils.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
@@ -65,17 +66,6 @@ public class OrderedZipStreamReaderTest {
         assertEquals(FILE4 + "\n" + FILE2, file2);
     }
 
-    @RepeatedTest(5)
-    void shouldReadInOrderJdk() throws Exception {
-        file2 = null;
-        file4 = null;
-        new JdkMemOrderedZipStreamReader()
-                .with(this::file2, "file_2.txt", "file_4.txt")
-                .with(this::file4, "file_4.txt")
-                .read(new FileInputStream(testFile));
-        assertEquals(FILE4, file4);
-        assertEquals(FILE4 + "\n" + FILE2, file2);
-    }
 
     @Test
     void shouldRequireConsumersForAllDependencies() throws IOException {

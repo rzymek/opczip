@@ -1,14 +1,19 @@
-package com.github.rzymek.opczip.reader;
+package com.github.rzymek.opczip.reader.ordered;
 
-import java.io.*;
-import java.util.*;
-import java.util.logging.Logger;
+import com.github.rzymek.opczip.reader.skipping.ZipStreamReader;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.zip.ZipEntry;
 
 import static java.util.stream.Collectors.toSet;
 
-abstract class OrderedZipStreamReader {
-    static final Logger log = Logger.getLogger(OrderedZipStreamReader.class.getName());
-
+public abstract class OrderedZipStreamReader {
     private Map<String, ConsumerEntry> consumers = new HashMap<>();
 
     private static class ConsumerEntry {
@@ -32,26 +37,28 @@ abstract class OrderedZipStreamReader {
 
     public void read(InputStream in) throws IOException {
         validateDependencies();
-        try (SkippableZip zip = open(in)) {
+        try (ZipStreamReader zip = open(in)) {
             while (hasPendingConsumers()) {
-                String name = zip.getNextEntry();
-                log.info(name);
-                if (name == null) {
+                ZipEntry entry = zip.nextEntry();
+                if (entry == null) {
                     break;
                 }
+                String name = entry.getName();
                 ConsumerEntry consumer = consumers.get(name);
                 if (consumer == null) {
-                    zip.skipEntry();
+                    zip.skipStream();
                 } else {
                     if (isEveryConsumed(consumer.dependencies)) {
-                        process(zip.getUncompressedInputStream(), consumer);
+                        process(zip.getUncompressedStream(), consumer);
                         consumers.entrySet().stream()
                                 .filter(e -> !e.getValue().consumed)
                                 .filter(e -> e.getValue().dependencies.contains(name))
                                 .filter(e -> isEveryConsumedBut(e.getValue().dependencies, name))
-                                .forEach(e -> process(zip.uncompress(getTempInputStream(e.getKey())), e.getValue()));
+                                .forEach(e -> process(ZipStreamReader.uncompressed(getTempInputStream(e.getKey())), e.getValue()));
                     } else {
-                        zip.transferCompressedTo(getTempOutputStream(name));
+                        try (OutputStream out = getTempOutputStream(name)) {
+                            zip.getCompressedStream().transferTo(out);
+                        }
                     }
                 }
             }
@@ -95,8 +102,8 @@ abstract class OrderedZipStreamReader {
 
     protected abstract InputStream getTempInputStream(String name) throws UncheckedIOException;
 
-    protected SkippableZip open(InputStream in) {
-        return new SkippableZipReader(in);
+    protected ZipStreamReader open(InputStream in) {
+        return new ZipStreamReader(in);
     }
 
     private boolean isUnconsumedDependency(String name) {

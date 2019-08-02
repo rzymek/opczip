@@ -1,11 +1,7 @@
-package com.github.rzymek.opczip.reader;
+package com.github.rzymek.opczip.reader.ordered;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
 
 public class DiskCacheOrderedZipStreamReader extends OrderedZipStreamReader {
     private final File dir;

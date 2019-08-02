@@ -1,5 +1,7 @@
 package com.github.rzymek.opczip.reader;
 
+import com.github.rzymek.opczip.reader.ordered.DiskCacheOrderedZipStreamReader;
+import com.github.rzymek.opczip.reader.ordered.MemCacheOrderedZipStreamReader;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -14,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class OrderedZipStreamReaderBenchmarkIT {
     final static File testFile = new File("target", "bin-read.zip");
     private static final int SIZE = 1024 * 1024 * 10;
-    public static final int REPEATS = 15;
+    public static final int REPEATS = 1;
     private boolean file4;
     private boolean file2;
 
@@ -72,18 +74,6 @@ public class OrderedZipStreamReaderBenchmarkIT {
         file2 = false;
         file4 = false;
         new DiskCacheOrderedZipStreamReader()
-                .with(this::file2, "file_2.txt", "file_4.txt")
-                .with(this::file4, "file_4.txt")
-                .read(new FileInputStream(testFile));
-        assertTrue(file4);
-        assertTrue(file2);
-    }
-
-    @RepeatedTest(REPEATS) @Disabled
-    void shouldReadInOrderJdk() throws Exception {
-        file2 = false;
-        file4 = false;
-        new JdkMemOrderedZipStreamReader()
                 .with(this::file2, "file_2.txt", "file_4.txt")
                 .with(this::file4, "file_4.txt")
                 .read(new FileInputStream(testFile));
