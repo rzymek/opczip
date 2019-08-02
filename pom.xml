@@ -6,7 +6,7 @@
 
     <groupId>com.github.rzymek</groupId>
     <artifactId>opczip</artifactId>
-    <version>1.0.2</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
 
     <name>OPC Output Stream</name>
@@ -71,9 +71,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.0</version>
                 <configuration>
-                    <source>9</source>
-                    <target>9</target>
+                    <source>8</source>
+                    <target>8</target>
                 </configuration>
             </plugin>
         </plugins>
