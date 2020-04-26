@@ -49,6 +49,35 @@ public class ZipEntryReaderTest {
     }
 
     @Test
+    void demo() throws IOException {
+        InputStream in = getClass().getResourceAsStream("/libre.xlsx");
+        try (ZipStreamReader reader = new ZipStreamReader(in)) {
+            byte[] sharedZipped = null;
+            for (; ; ) {
+                ZipEntry entry = reader.nextEntry();
+                if (entry == null) {
+                    break;
+                }
+                if ("xl/sharedStrings.xml".equals(entry.getName())) {
+                    sharedZipped = reader.getCompressedStream() // save compressed entry without decompressing
+                            .readAllBytes();
+                } else if ("xl/worksheets/sheet1.xml".equals(entry.getName())) {
+                    byte[] sheet1 = reader.getUncompressedStream() // decompress current entry
+                            .readAllBytes();
+                    if (sharedZipped != null) {
+                        byte[] shared = ZipStreamReader
+                                // decompress previously saved entry
+                                .uncompressed(new ByteArrayInputStream(sharedZipped))
+                                .readAllBytes();
+                    }
+                } else {
+                    reader.skipStream(); // skip entry without decompressing
+                }
+            }
+        }
+    }
+
+    @Test
     void testXlsxReZipped() throws IOException {
         try (ZipStreamReader reader = new ZipStreamReader(getClass().getResourceAsStream("/libre-rezipped.xlsx"))) {
             assertEquals("docProps/", reader.nextEntry().getName());
@@ -95,12 +124,12 @@ public class ZipEntryReaderTest {
         }
     }
 
-     static String entryToString(ZipStreamReader reader) throws IOException {
-         InflaterInputStream inputStream = reader.getUncompressedStream();
-         return toString(inputStream);
-     }
+    static String entryToString(ZipStreamReader reader) throws IOException {
+        InflaterInputStream inputStream = reader.getUncompressedStream();
+        return toString(inputStream);
+    }
 
-     static String toString(InputStream inputStream) throws IOException {
+    static String toString(InputStream inputStream) throws IOException {
         return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
     }
 

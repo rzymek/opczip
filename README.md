@@ -2,14 +2,20 @@
 ![build status](https://travis-ci.org/rzymek/opczip.svg?branch=master)
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.rzymek/opczip.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22com.github.rzymek%22%20AND%20a:%22opczip%22)
 
-Drop in replacement for `java.util.ZipOutputStream`. Only Java ZIP64 implementation compatible with MS Excel.
+Provides
+1. `OpcZipOutputStream` - The only Java ZIP64 implementation compatible with MS Excel.
+2. `ZipStreamReader` - ZIP stream reader with efficient skipping of entries.
+
+# 1. OpcZipOutputStream
+
+Drop in replacement for `java.util.ZipOutputStream`. 
 
 ### Usage
 ```xml
 <dependency>
     <groupId>com.github.rzymek</groupId>
     <artifactId>opczip</artifactId>
-    <version>1.0.2</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 
@@ -379,3 +385,35 @@ void writeEND(int entriesCount, int offset, int length) throws IOException {
 
 It seems critical to Excel that the zip specification version is 4.5 in Local File Header if ZIP64 is used anywhere
 with this zip entry (Central directory file header or Data descriptor). 
+
+# ZipStreamReader
+
+ZIP stream reader with efficient skipping of entries.
+
+Usage:
+
+    try (ZipStreamReader reader = new ZipStreamReader(in)) {
+        byte[] sharedZipped = null;
+        for (; ; ) {
+            ZipEntry entry = reader.nextEntry();
+            if (entry == null) {
+                break;
+            }
+            if ("xl/sharedStrings.xml".equals(entry.getName())) {
+                sharedZipped = reader.getCompressedStream() // save compressed entry without decompressing
+                        .readAllBytes();
+            } else if ("xl/worksheets/sheet1.xml".equals(entry.getName())) {
+                byte[] sheet1 = reader.getUncompressedStream() // decompress current entry
+                        .readAllBytes();
+                if (sharedZipped != null) {
+                    byte[] shared = ZipStreamReader
+                            // decompress previously saved entry
+                            .uncompressed(new ByteArrayInputStream(sharedZipped))
+                            .readAllBytes();
+                }
+            } else {
+                reader.skipStream(); // skip entry without decompressing
+            }
+        }
+    }
+
