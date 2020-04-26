@@ -2,6 +2,7 @@ package com.github.rzymek.opczip.reader.skipping;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PushbackInputStream;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -55,7 +56,7 @@ class CompressedEntryInputStream extends FilterInputStream {
                 byte currentByte = buf[off + i];
                 if (expectingDatSig && dat.matchNext(currentByte)) {
                     eof(buf, off, len, i - DAT.length() + 1);
-                    in.skip(DAT_SIZE);
+                    skipExactly(in, DAT_SIZE);
                     return i - DAT.length() + 1;
                 }
                 if (lfh.matchNext(currentByte) || cen.matchNext(currentByte)) {
@@ -64,6 +65,13 @@ class CompressedEntryInputStream extends FilterInputStream {
                 }
             }
             return readCount;
+        }
+    }
+
+    static void skipExactly(InputStream in, long bytes) throws IOException {
+        long leftToSkip = bytes;
+        while (leftToSkip > 0) {
+            leftToSkip -= in.skip(leftToSkip);
         }
     }
 
@@ -76,10 +84,10 @@ class CompressedEntryInputStream extends FilterInputStream {
     private void eof(byte[] buf, int off, int len, int i) throws IOException {
         ((PushbackInputStream) in).unread(buf, off + i, len - i);
         endOfEntry = true;
-        if (crc32.getValue() != entry.getCrc()) {
+        if (entry.getCrc() != -1 && crc32.getValue() != entry.getCrc()) {
             throw new IOException("CRC32: Expecting " + entry.getCrc() + ". Got: " + crc32.getValue());
         }
-        if (count != entry.getCompressedSize()) {
+        if (entry.getCompressedSize() != -1 && count != entry.getCompressedSize()) {
             throw new IOException("Expecting compressed size " + entry.getCompressedSize() + ". Got: " + count);
         }
     }

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.Deflater;
+import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -94,8 +95,13 @@ public class ZipEntryReaderTest {
         }
     }
 
-    private String entryToString(ZipStreamReader reader) throws IOException {
-        return new String(reader.getUncompressedStream().readAllBytes(), StandardCharsets.UTF_8);
+     static String entryToString(ZipStreamReader reader) throws IOException {
+         InflaterInputStream inputStream = reader.getUncompressedStream();
+         return toString(inputStream);
+     }
+
+     static String toString(InputStream inputStream) throws IOException {
+        return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
     }
 
 }

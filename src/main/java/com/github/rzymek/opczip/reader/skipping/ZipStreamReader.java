@@ -8,13 +8,14 @@ import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipEntry;
 
+import static com.github.rzymek.opczip.reader.skipping.CompressedEntryInputStream.skipExactly;
 import static com.github.rzymek.opczip.reader.skipping.ZipReadSpec.*;
 
 public class ZipStreamReader implements AutoCloseable {
     private final PushbackInputStream in;
     private int flag;
     private boolean reachedCEN = false;
-    private ZipEntry currentEntry;
+    protected ZipEntry currentEntry;
 
     public ZipStreamReader(InputStream in) {
         this.in = new PushbackInputStream(in, 8192);
@@ -39,12 +40,21 @@ public class ZipStreamReader implements AutoCloseable {
         byte[] filename = readNBytes(in, nameLen);
 
         currentEntry = new ZipEntry(new String(filename, StandardCharsets.US_ASCII));
-        currentEntry.setCompressedSize(get32(lfh, LFH_SIZ));
-        currentEntry.setSize(get32(lfh, LFH_LEN));
-        currentEntry.setCrc(get32(lfh, LFH_CRC));
+        long csize = get32(lfh, LFH_SIZ);
+        if (csize != 0) {
+            currentEntry.setCompressedSize(csize);
+        }
+        long size = get32(lfh, LFH_LEN);
+        if (size != 0) {
+            currentEntry.setSize(size);
+        }
+        long crc = get32(lfh, LFH_CRC);
+        if (crc != 0) {
+            currentEntry.setCrc(crc);
+        }
 
         int extLen = get16(lfh, LFH_EXT);
-        in.skip(extLen);
+        skipExactly(in, extLen);
 
         return currentEntry;
     }
@@ -53,7 +63,7 @@ public class ZipStreamReader implements AutoCloseable {
     public void skipStream() throws IOException {
         long compressedSize = currentEntry.getCompressedSize();
         if (compressedSize > 0) {
-            in.skip(compressedSize + (expectingDatSig() ? DAT_SIZE : 0));
+            skipExactly(in, compressedSize + (expectingDatSig() ? DAT_SIZE : 0));
         } else {
             getCompressedStream().readAllBytes();
         }
