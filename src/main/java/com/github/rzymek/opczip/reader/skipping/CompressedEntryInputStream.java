@@ -2,7 +2,6 @@ package com.github.rzymek.opczip.reader.skipping;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PushbackInputStream;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -56,7 +55,7 @@ class CompressedEntryInputStream extends FilterInputStream {
                 byte currentByte = buf[off + i];
                 if (expectingDatSig && dat.matchNext(currentByte)) {
                     eof(buf, off, len, i - DAT.length() + 1);
-                    skipExactly(in, DAT_SIZE);
+                    ExactIO.skipExactly(in, DAT_SIZE);
                     return i - DAT.length() + 1;
                 }
                 if (lfh.matchNext(currentByte) || cen.matchNext(currentByte)) {
@@ -65,13 +64,6 @@ class CompressedEntryInputStream extends FilterInputStream {
                 }
             }
             return readCount;
-        }
-    }
-
-    static void skipExactly(InputStream in, long bytes) throws IOException {
-        long leftToSkip = bytes;
-        while (leftToSkip > 0) {
-            leftToSkip -= in.skip(leftToSkip);
         }
     }
 

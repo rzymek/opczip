@@ -2,7 +2,10 @@ package com.github.rzymek.opczip.reader;
 
 import com.github.rzymek.opczip.reader.ordered.DiskCacheOrderedZipStreamReader;
 import com.github.rzymek.opczip.reader.ordered.MemCacheOrderedZipStreamReader;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.RepeatedTest;
 
 import java.io.*;
 import java.util.zip.ZipEntry;
@@ -81,13 +84,13 @@ public class OrderedZipStreamReaderBenchmarkIT {
         assertTrue(file2);
     }
 
-    void file4(InputStream in) throws IOException {
+    void file4(InputStream in) {
         assertFalse(file4);
         assertFalse(file2);
         file4 = true;
     }
 
-    void file2(InputStream in) throws IOException {
+    void file2(InputStream in) {
         assertFalse(file2);
         assertTrue(file4);
         file2 = true;

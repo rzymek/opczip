@@ -16,7 +16,7 @@ public class PutAsideZipStreamReader extends ZipStreamReader {
     }
 
     public void saveStream() throws IOException {
-        saved.put(currentEntry.getName(), getCompressedStream().readAllBytes());
+        saved.put(currentEntry.getName(), InputStreamUtils.readAllBytes(getCompressedStream()));
     }
 
     public InputStream restoreStream(String name) {

@@ -10,7 +10,6 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
@@ -69,7 +68,7 @@ public class FileListTest implements ArgumentsProvider {
         InputStream resource = FileListTest.class.getResourceAsStream(XLSX_DIR);
         Scanner scanner = new Scanner(resource);
         return StreamSupport.stream(
-                Spliterators.spliteratorUnknownSize(new Iterator<>() {
+                Spliterators.spliteratorUnknownSize(new Iterator<Arguments>() {
                     @Override
                     public boolean hasNext() {
                         boolean hasNext = scanner.hasNext();

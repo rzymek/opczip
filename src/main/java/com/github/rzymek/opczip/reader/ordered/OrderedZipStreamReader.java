@@ -1,39 +1,19 @@
 package com.github.rzymek.opczip.reader.ordered;
 
+import com.github.rzymek.opczip.reader.InputStreamUtils;
 import com.github.rzymek.opczip.reader.skipping.ZipStreamReader;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.zip.ZipEntry;
 
 import static java.util.stream.Collectors.toSet;
 
 public abstract class OrderedZipStreamReader {
     private Map<String, ConsumerEntry> consumers = new HashMap<>();
-
-    private static class ConsumerEntry {
-        Consumer processor;
-        Set<String> dependencies;
-        boolean consumed = false;
-
-        ConsumerEntry(Consumer consumer, String... dependencies) {
-            this.processor = consumer;
-            this.dependencies = Set.of(dependencies);
-        }
-    }
-
-    public OrderedZipStreamReader with(Consumer consumer, String entry, String... dependencies) {
-        ConsumerEntry prev = consumers.put(entry, new ConsumerEntry(consumer, dependencies));
-        if (prev != null) {
-            throw new IllegalStateException(entry + " already registered");
-        }
-        return this;
-    }
 
     public void read(InputStream in) throws IOException {
         validateDependencies();
@@ -57,12 +37,26 @@ public abstract class OrderedZipStreamReader {
                                 .forEach(e -> process(ZipStreamReader.uncompressed(getTempInputStream(e.getKey())), e.getValue()));
                     } else {
                         try (OutputStream out = getTempOutputStream(name)) {
-                            zip.getCompressedStream().transferTo(out);
+                            InputStreamUtils.transferTo(zip.getCompressedStream(), out);
                         }
                     }
                 }
             }
         }
+    }
+
+    public OrderedZipStreamReader with(Consumer consumer, String entry, String... dependencies) {
+        ConsumerEntry prev = consumers.put(entry, new ConsumerEntry(consumer, dependencies));
+        if (prev != null) {
+            throw new IllegalStateException(entry + " already registered");
+        }
+        return this;
+    }
+
+    private boolean isEveryConsumedBut(Set<String> dependencies, String name) {
+        return dependencies.stream()
+                .filter(dep -> !dep.equals(name))
+                .noneMatch(this::isUnconsumedDependency);
     }
 
     private void validateDependencies() {
@@ -77,10 +71,8 @@ public abstract class OrderedZipStreamReader {
         });
     }
 
-    private boolean isEveryConsumedBut(Set<String> dependencies, String name) {
-        return !dependencies.stream()
-                .filter(dep -> !dep.equals(name))
-                .anyMatch(this::isUnconsumedDependency);
+    private boolean isEveryConsumed(Set<String> dependencies) {
+        return dependencies.stream().noneMatch(this::isUnconsumedDependency);
     }
 
 
@@ -94,8 +86,16 @@ public abstract class OrderedZipStreamReader {
 
     }
 
-    private boolean isEveryConsumed(Set<String> dependencies) {
-        return !dependencies.stream().anyMatch(this::isUnconsumedDependency);
+    private static class ConsumerEntry {
+        Consumer processor;
+        Set<String> dependencies;
+        boolean consumed = false;
+
+        ConsumerEntry(Consumer consumer, String... dependencies) {
+            this.processor = consumer;
+            // in Java9 Set.of(dependencies)
+            this.dependencies = new HashSet<>(Arrays.asList(dependencies));
+        }
     }
 
     protected abstract OutputStream getTempOutputStream(String name) throws IOException;

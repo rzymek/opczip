@@ -26,7 +26,7 @@ class ZipReadSpec {
      * Fetches unsigned 16-bit value from byte array at specified offset.
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
-    static final int get16(byte b[], int off) {
+    static int get16(byte[] b, int off) {
         return (b[off] & 0xff) | ((b[off + 1] & 0xff) << 8);
     }
 
@@ -34,13 +34,13 @@ class ZipReadSpec {
      * Fetches unsigned 32-bit value from byte array at specified offset.
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
-    static final long get32(byte b[], int off) {
+    static long get32(byte[] b, int off) {
         return (get16(b, off) | ((long) get16(b, off + 2) << 16)) & 0xffffffffL;
     }
 
     static byte[] readNBytes(InputStream in, int len) throws IOException {
         byte[] buf = new byte[len];
-        int read = in.readNBytes(buf, 0, len);
+        int read = ExactIO.readExactly(in, buf, 0, len);
         if (read != len) {
             throw new IOException("unexpected EOF");
         }

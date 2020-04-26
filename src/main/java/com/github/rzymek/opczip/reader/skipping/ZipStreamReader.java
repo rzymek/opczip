@@ -1,5 +1,7 @@
 package com.github.rzymek.opczip.reader.skipping;
 
+import com.github.rzymek.opczip.reader.InputStreamUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
@@ -8,7 +10,7 @@ import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipEntry;
 
-import static com.github.rzymek.opczip.reader.skipping.CompressedEntryInputStream.skipExactly;
+import static com.github.rzymek.opczip.reader.skipping.ExactIO.skipExactly;
 import static com.github.rzymek.opczip.reader.skipping.ZipReadSpec.*;
 
 public class ZipStreamReader implements AutoCloseable {
@@ -65,7 +67,7 @@ public class ZipStreamReader implements AutoCloseable {
         if (compressedSize > 0) {
             skipExactly(in, compressedSize + (expectingDatSig() ? DAT_SIZE : 0));
         } else {
-            getCompressedStream().readAllBytes();
+            InputStreamUtils.discardAllBytes(getCompressedStream());
         }
     }
 

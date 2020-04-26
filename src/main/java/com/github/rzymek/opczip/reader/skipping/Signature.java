@@ -8,8 +8,14 @@ class Signature {
     Signature(byte[] bytes) {
         this.bytes = bytes;
     }
+
     public boolean matchesStartOf(byte[] buf) {
-        return Arrays.equals(buf, 0, bytes.length, bytes, 0, bytes.length);
+        return Arrays.equals(
+                Arrays.copyOf(buf, bytes.length),
+                bytes
+        );
+        // in Java9:
+        // return Arrays.equals(buf, 0, bytes.length, bytes, 0, bytes.length);
     }
 
     public int length() {
