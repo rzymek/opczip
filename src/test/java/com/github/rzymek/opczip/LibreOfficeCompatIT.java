@@ -1,6 +1,7 @@
 package com.github.rzymek.opczip;
 
 import com.github.rzymek.opczip.utils.StreamGobbler;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -26,28 +28,21 @@ public class LibreOfficeCompatIT {
     static File xlsxDir = new File("target/libre/");
 
     @BeforeAll
-    public static void unzip() throws IOException {
+    static void unzip() throws IOException {
         unzip(input, xlsxDir);
     }
 
-    @Test
-    public void base() throws Exception {
-        libreValidate(input);
+    @AfterAll
+    static void cleanup() throws IOException {
+        Files.walk(xlsxDir.toPath())
+                .sorted(Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach(File::delete);
     }
 
     @Test
-    public void jdk() throws Exception {
-        File xlsx = new File("target/jdk.xlsx");
-        xlsx.delete();
-        zip(xlsxDir, xlsx);
-        libreValidate(xlsx);
-    }
-    @Test
-    public void opczip() throws Exception {
-        File xlsx = new File("target/opczip.xlsx");
-        xlsx.delete();
-        opczip(xlsxDir, xlsx);
-        libreValidate(xlsx);
+    void base() throws Exception {
+        libreValidate(input);
     }
 
     protected static void unzip(File input, File target) throws IOException {
@@ -100,6 +95,7 @@ public class LibreOfficeCompatIT {
                     });
         }
     }
+
     public static void opczip(File sourceDirPath, File zipFilePath) throws IOException {
         Path p = Files.createFile(zipFilePath.toPath());
         try (OpcOutputStream zs = new OpcOutputStream(Files.newOutputStream(p))) {
@@ -117,5 +113,21 @@ public class LibreOfficeCompatIT {
                         }
                     });
         }
+    }
+
+    @Test
+    void jdk() throws Exception {
+        File xlsx = new File("target/jdk.xlsx");
+        xlsx.delete();
+        zip(xlsxDir, xlsx);
+        libreValidate(xlsx);
+    }
+
+    @Test
+    void opczip() throws Exception {
+        File xlsx = new File("target/opczip.xlsx");
+        xlsx.delete();
+        opczip(xlsxDir, xlsx);
+        libreValidate(xlsx);
     }
 }
