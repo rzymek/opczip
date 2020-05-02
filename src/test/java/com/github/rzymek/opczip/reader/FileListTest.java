@@ -15,6 +15,8 @@ import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static com.github.rzymek.opczip.reader.InputStreamUtils.discardAllBytes;
+import static com.github.rzymek.opczip.reader.InputStreamUtils.readAllBytes;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FileListTest implements ArgumentsProvider {
@@ -23,13 +25,31 @@ public class FileListTest implements ArgumentsProvider {
 
     @ParameterizedTest
     @ArgumentsSource(FileListTest.class)
-    void shouldListSameFilenamesAsJDK(String filename) throws IOException {
-        String opc = listWithOpc(filename);
+    void shouldListSameFilenamesAsJDKWhenSkipping(String filename) throws IOException {
+        String opc = listWithOpc(filename, ZipStreamReader::skipStream);
         String jdk = listWithJDK(filename);
         assertThat(opc).isEqualTo(jdk);
     }
 
-    private String listWithOpc(String filename) throws IOException {
+    @ParameterizedTest
+    @ArgumentsSource(FileListTest.class)
+    void shouldListSameFilenamesAsJDKWhenReadingUncompressed(String filename) throws IOException {
+        String opc = listWithOpc(filename, zipStreamReader -> readAllBytes(zipStreamReader.getUncompressedStream()));
+        String jdk = listWithJDK(filename);
+        System.out.println(opc);
+        assertThat(opc).isEqualTo(jdk);
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(FileListTest.class)
+    void shouldListSameFilenamesAsJDKWhenReadingCompressed(String filename) throws IOException {
+        String opc = listWithOpc(filename, zipStreamReader -> discardAllBytes(zipStreamReader.getCompressedStream()));
+        String jdk = listWithJDK(filename);
+        assertThat(opc).isEqualTo(jdk);
+    }
+
+
+    private String listWithOpc(String filename, IOConsumer<ZipStreamReader> goToNextEntry) throws IOException {
         List<String> entries = new ArrayList<>();
         try (ZipStreamReader reader = new ZipStreamReader(open(filename))) {
             for (; ; ) {
@@ -37,8 +57,9 @@ public class FileListTest implements ArgumentsProvider {
                 if (entry == null) {
                     break;
                 }
-                entries.add(entry.getName() + ":" + entry.getCompressedSize());
-                reader.skipStream();
+                long compressedSize = entry.getCompressedSize();
+                entries.add(entry.getName() + ":" + (compressedSize == 0 ? -1 : compressedSize));
+                goToNextEntry.accept(reader);
             }
         }
         return String.join("\n", entries);
@@ -86,4 +107,10 @@ public class FileListTest implements ArgumentsProvider {
                 false
         );
     }
+
+    @FunctionalInterface
+    interface IOConsumer<T> {
+        void accept(T t) throws IOException;
+    }
 }
+

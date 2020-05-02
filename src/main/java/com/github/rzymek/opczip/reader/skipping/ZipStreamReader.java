@@ -1,15 +1,13 @@
 package com.github.rzymek.opczip.reader.skipping;
 
-import com.github.rzymek.opczip.reader.InputStreamUtils;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipEntry;
 
+import static com.github.rzymek.opczip.reader.InputStreamUtils.discardAllBytes;
 import static com.github.rzymek.opczip.reader.skipping.ExactIO.skipExactly;
 import static com.github.rzymek.opczip.reader.skipping.ZipReadSpec.*;
 
@@ -23,6 +21,10 @@ public class ZipStreamReader implements AutoCloseable {
         this.in = new PushbackInputStream(in, 8192);
     }
 
+    public static InflaterInputStream uncompressed(InputStream compressedStream) {
+        return new ReadFullyInflaterInputStream(compressedStream);
+    }
+
     public ZipEntry nextEntry() throws IOException {
         if (reachedCEN) {
             return null;
@@ -34,7 +36,7 @@ public class ZipStreamReader implements AutoCloseable {
         }
         if (!LFH.matchesStartOf(lfh)) {
             String msg = "Expecting LFH bytes (" + LFH + "). " +
-                    "Got " + Signature.toString(lfh, LFH.length());
+                    "Got " + Signature.toString(lfh, LFH_SIZE);
             throw new IOException(msg);
         }
         flag = get16(lfh, LFH_FLG);
@@ -43,17 +45,10 @@ public class ZipStreamReader implements AutoCloseable {
 
         currentEntry = new ZipEntry(new String(filename, StandardCharsets.US_ASCII));
         long csize = get32(lfh, LFH_SIZ);
-        if (csize != 0) {
-            currentEntry.setCompressedSize(csize);
-        }
+        currentEntry.setCompressedSize(csize);
         long size = get32(lfh, LFH_LEN);
-        if (size != 0) {
-            currentEntry.setSize(size);
-        }
-        long crc = get32(lfh, LFH_CRC);
-        if (crc != 0) {
-            currentEntry.setCrc(crc);
-        }
+        currentEntry.setSize(size);
+        currentEntry.setCrc(get32(lfh, LFH_CRC));
 
         int extLen = get16(lfh, LFH_EXT);
         skipExactly(in, extLen);
@@ -61,22 +56,17 @@ public class ZipStreamReader implements AutoCloseable {
         return currentEntry;
     }
 
-
     public void skipStream() throws IOException {
         long compressedSize = currentEntry.getCompressedSize();
         if (compressedSize > 0) {
             skipExactly(in, compressedSize + (expectingDatSig() ? DAT_SIZE : 0));
         } else {
-            InputStreamUtils.discardAllBytes(getCompressedStream());
+            discardAllBytes(getCompressedStream());
         }
     }
 
     public InflaterInputStream getUncompressedStream() {
         return uncompressed(getCompressedStream());
-    }
-
-    public static InflaterInputStream uncompressed(InputStream compressedStream) {
-        return new InflaterInputStream(compressedStream, new Inflater(true));
     }
 
     public InputStream getCompressedStream() {

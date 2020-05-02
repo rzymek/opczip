@@ -26,7 +26,7 @@ public class InputStreamUtils {
     public static void transferTo(InputStream in, OutputStream out) throws IOException {
         // in Java9:
         // in.transferTo(out);
-        int bufSize = 8192;
+        int bufSize = 4096;
         byte[] buffer = new byte[bufSize];
         int read;
         while ((read = in.read(buffer, 0, bufSize)) >= 0) {

@@ -7,11 +7,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.zip.Deflater;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static com.github.rzymek.opczip.reader.OrderedZipStreamReaderTest.generateEntry;
-import static com.github.rzymek.opczip.reader.ZipEntryReaderTest.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -33,24 +33,33 @@ public class PutAsideZipReaderTest {
         }
     }
 
-    @Test
-    void test() throws IOException {
-        try (PutAsideZipStreamReader reader = new PutAsideZipStreamReader(new FileInputStream(testFile))) {
-            assertEquals("file_1.txt", reader.nextEntry().getName());
-            assertEquals("1111111111111111111111111111111111111111", entryToString(reader));
-            assertEquals("file_2.txt", reader.nextEntry().getName());
-            reader.saveStream();
-            assertEquals("file_3.txt", reader.nextEntry().getName());
-            assertEquals("3333333333333333333333333333333333333333", entryToString(reader));
-            assertEquals("file_4.txt", reader.nextEntry().getName());
-            reader.skipStream();
-            assertEquals("file_5.txt", reader.nextEntry().getName());
-            assertEquals("5555555555555555555555555555555555555555", entryToString(reader));
-            assertNull(reader.nextEntry());
-            assertNull(reader.getCompressedStream());
-            assertNull(reader.nextEntry());
-            assertEquals("2222222222222222222222222222222222222222", ZipEntryReaderTest.toString(reader.restoreStream("file_2.txt")));
-        }
+    static void generateEntry(ZipOutputStream zip, char c, int size) throws IOException {
+        zip.putNextEntry(new ZipEntry("file_" + c + ".txt"));
+        byte[] buf = new byte[size];
+        Arrays.fill(buf, (byte) c);
+        zip.write(buf, 0, buf.length);
     }
 
+    @Test
+    void test() throws Exception {
+        try (PutAsideZipStreamReader reader = new PutAsideZipStreamReader(new FileInputStream(testFile))) {
+            assertEquals("file_1.txt", reader.nextEntry().getName());
+            assertEquals("1111111111111111111111111111111111111111", ZipEntryReaderTest.toString(reader.getInputStream()));
+            ZipEntry zipEntry = reader.nextEntry();
+            assertEquals("file_2.txt", zipEntry.getName());
+            reader.putAsideForLater();
+            assertEquals("file_3.txt", reader.nextEntry().getName());
+            reader.skipEntry();
+            assertEquals("file_4.txt", reader.nextEntry().getName());
+            reader.putAsideForLater();
+            assertEquals("file_5.txt", reader.nextEntry().getName());
+            assertEquals("5555555555555555555555555555555555555555", ZipEntryReaderTest.toString(reader.getInputStream()));
+            assertEquals("file_2.txt", reader.nextEntry().getName());
+            reader.skipEntry();
+            assertEquals("file_4.txt", reader.nextEntry().getName());
+            assertEquals("4444444444444444444444444444444444444444", ZipEntryReaderTest.toString(reader.getInputStream()));
+            assertNull(reader.nextEntry());
+            assertNull(reader.nextEntry());
+        }
+    }
 }

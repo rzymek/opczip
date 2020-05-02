@@ -3,6 +3,8 @@ package com.github.rzymek.opczip.reader.skipping;
 import java.io.IOException;
 import java.io.InputStream;
 
+import static java.lang.String.format;
+
 class ZipReadSpec {
 
     static final Signature CEN = new Signature(new byte[]{'P', 'K', 1, 2});
@@ -42,7 +44,7 @@ class ZipReadSpec {
         byte[] buf = new byte[len];
         int read = ExactIO.readExactly(in, buf, 0, len);
         if (read != len) {
-            throw new IOException("unexpected EOF");
+            throw new IOException(format("unexpected EOF. %s != %s", read, len));
         }
         return buf;
     }

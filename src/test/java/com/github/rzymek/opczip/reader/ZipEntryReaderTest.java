@@ -7,12 +7,11 @@ import org.junit.jupiter.api.Test;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.Deflater;
-import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static com.github.rzymek.opczip.reader.InputStreamUtils.readAllBytes;
-import static com.github.rzymek.opczip.reader.OrderedZipStreamReaderTest.generateEntry;
+import static com.github.rzymek.opczip.reader.PutAsideZipReaderTest.generateEntry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -62,26 +61,21 @@ public class ZipEntryReaderTest {
         try (ZipStreamReader reader = new ZipStreamReader(new FileInputStream(file))) {
             ZipEntry entry = reader.nextEntry();
             assertEquals("file_1.txt", entry.getName());
-            assertEquals("1111111111111111111111111111111111111111", entryToString(reader));
+            assertEquals("1111111111111111111111111111111111111111", toString(reader.getUncompressedStream()));
             entry = reader.nextEntry();
             assertEquals("file_2.txt", entry.getName());
             reader.skipStream();
             entry = reader.nextEntry();
             assertEquals("file_3.txt", entry.getName());
-            assertEquals("3333333333333333333333333333333333333333", entryToString(reader));
+            assertEquals("3333333333333333333333333333333333333333", toString(reader.getUncompressedStream()));
             assertEquals("file_4.txt", reader.nextEntry().getName());
             reader.skipStream();
             assertEquals("file_5.txt", reader.nextEntry().getName());
-            assertEquals("5555555555555555555555555555555555555555", entryToString(reader));
+            assertEquals("5555555555555555555555555555555555555555", toString(reader.getUncompressedStream()));
             assertNull(reader.nextEntry());
             assertNull(reader.getCompressedStream());
             assertNull(reader.nextEntry());
         }
-    }
-
-    static String entryToString(ZipStreamReader reader) throws IOException {
-        InflaterInputStream inputStream = reader.getUncompressedStream();
-        return toString(inputStream);
     }
 
     @Test

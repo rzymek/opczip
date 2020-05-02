@@ -57,7 +57,7 @@ public class LibreOfficeCompatIT {
     }
 
     protected void libreValidate(File input) throws IOException, InterruptedException {
-        File targetDir = new File("xlsxDir");
+        File targetDir = new File("target/xlsxDir");
         File output = new File(targetDir, input.getName().replace(".xlsx", ".csv"));
         output.delete();
         assertFalse(output.exists(), output + " exists");
