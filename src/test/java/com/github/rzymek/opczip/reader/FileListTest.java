@@ -9,9 +9,13 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -86,26 +90,16 @@ public class FileListTest implements ArgumentsProvider {
 
     @Override
     public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
-        InputStream resource = FileListTest.class.getResourceAsStream(XLSX_DIR);
-        Scanner scanner = new Scanner(resource);
-        return StreamSupport.stream(
-                Spliterators.spliteratorUnknownSize(new Iterator<Arguments>() {
-                    @Override
-                    public boolean hasNext() {
-                        boolean hasNext = scanner.hasNext();
-                        if (!hasNext) {
-                            scanner.close();
-                        }
-                        return hasNext;
-                    }
-
-                    @Override
-                    public Arguments next() {
-                        return Arguments.of(scanner.nextLine());
-                    }
-                }, Spliterator.ORDERED),
-                false
-        );
+        try {
+            URI resource = FileListTest.class.getResource(XLSX_DIR).toURI();
+            Path path = Paths.get(resource);
+            return Files.list(path)
+                    .map(Path::getFileName)
+                    .map(Path::toString)
+                    .map(Arguments::of);
+        } catch (URISyntaxException | IOException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 
     @FunctionalInterface
