@@ -25,8 +25,8 @@ class Zip64Impl {
         final String filename;
         long crc;
         long size;
-        int compressedSize;
-        int offset;
+        long compressedSize;
+        long offset;
 
         Entry(String filename) {
             this.filename = filename;
@@ -82,7 +82,7 @@ class Zip64Impl {
         writeShort(ZipEntry.DEFLATED);                 // compression method: 8 = deflate
         writeInt(0);                                // file modification time & date
         writeInt(entry.crc);                           // CRC-32
-        writeInt(entry.compressedSize);                // compressed size
+        writeInt((int) entry.compressedSize);                // compressed size
         writeInt(useZip64 ? MAX32 : entry.size); // uncompressed size
         writeShort(entry.filename.length());           // filename length
         writeShort(useZip64
@@ -92,7 +92,7 @@ class Zip64Impl {
         writeShort(0);                              // disk number where file starts
         writeShort(0);                              // internal file attributes (unused)
         writeInt(0);                                // external file attributes (unused)
-        writeInt(entry.offset);                        // LFH offset
+        writeInt((int) entry.offset);                        // LFH offset
         byte[] filenameBytes = entry.filename.getBytes(US_ASCII);
         out.write(filenameBytes);                      // filename characters
         if (useZip64) {
@@ -107,7 +107,7 @@ class Zip64Impl {
     /**
      * Write End of central directory record (EOCD)
      */
-    int writeEND(int entriesCount, int offset, int length) throws IOException {
+    int writeEND(int entriesCount, long offset, long length) throws IOException {
         written = 0;
         writeInt(PK0506);         // "PK\005\006"
         writeShort(0);         // number of this disk
@@ -135,6 +135,7 @@ class Zip64Impl {
      */
     private void writeInt(long v) throws IOException {
         OutputStream out = this.out;
+        v = Math.min(v, MAX32);
         out.write((int) ((v >>> 0) & 0xff));
         out.write((int) ((v >>> 8) & 0xff));
         out.write((int) ((v >>> 16) & 0xff));
