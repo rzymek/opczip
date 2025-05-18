@@ -18,7 +18,7 @@ public class OpcOutputStream extends DeflaterOutputStream {
     private final List<Entry> entries = new ArrayList<>();
     private final CRC32 crc = new CRC32();
     private Entry current;
-    private int written = 0;
+    private long written = 0;
     private boolean finished = false;
 
     /**
@@ -86,7 +86,7 @@ public class OpcOutputStream extends DeflaterOutputStream {
         if(current != null) {
             closeEntry();
         }
-        int offset = written;
+        long offset = written;
         for (Entry entry : entries) {
             written += spec.writeCEN(entry);
         }
